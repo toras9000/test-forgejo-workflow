@@ -1,0 +1,140 @@
+name: test-forgejo-workflow
+
+volumes:
+  forgejo-app-data:
+  forgejo-runner-data:
+
+networks:
+  composes-frontend:
+
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:11
+    restart: unless-stopped
+    command: sh -c "
+          cat /work/certs/ca/ca.crt >> /etc/ssl/certs/ca-certificates.crt
+       && /usr/bin/s6-svscan /etc/s6
+      "
+    networks:
+      default:
+        aliases:
+          - forgejo-app-container
+      composes-frontend:
+        aliases:
+          - forgejo-app-container
+    ports:
+      - "9922:22"
+    healthcheck:
+      test: curl -f -s http://localhost:3000 || exit 1
+      start_period: 60s
+      start_interval: 3s
+      timeout: 5s
+      interval: 300s
+      retries: 3
+    volumes:
+      - type: bind
+        source: ./assets/proxy/certs
+        target: /work/certs
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: volume
+        source: forgejo-app-data
+        target: /data
+    environment:
+      - TZ=JST-9
+      - USER_UID=1000
+      - USER_GID=1000
+      - FORGEJO__database__DB_TYPE=sqlite3
+      - FORGEJO__cron_0x2E_update_checker__ENABLED=false
+      - FORGEJO__server__DOMAIN=forgejo.myserver.home
+      - FORGEJO__server__ROOT_URL=https://forgejo.myserver.home
+      - FORGEJO__server__SSH_PORT=9922
+      - FORGEJO__admin__USER_DISABLED_FEATURES=deletion
+      - FORGEJO__admin__EXTERNAL_USER_DISABLE_FEATURES=deletion
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
+      - FORGEJO__service_0x2E_explore__REQUIRE_SIGNIN_VIEW=true
+      - FORGEJO__migrations__ALLOW_LOCALNETWORKS=true
+      - FORGEJO__quota__ENABLED=true
+      - FORGEJO__quota_0x2E_default__TOTAL=8G
+
+  docker:
+    image: docker:dind
+    restart: 'unless-stopped'
+    privileged: 'true'
+    networks:
+      default:
+        aliases:
+          - forgejo-docker-container
+    command: ['dockerd', '-H', 'tcp://0.0.0.0:2375', '--tls=false']
+    healthcheck:
+      test: docker -H tcp://localhost:2375 info || exit 1
+      start_period: 60s
+      start_interval: 3s
+      timeout: 5s
+      interval: 300s
+      retries: 3
+
+  runner:
+    image: my/runner
+    build:
+      context: ./build/runner
+      additional_contexts:
+        certs: ./assets/proxy/certs/ca
+      args:
+        - RUNNER_VERSION=6
+    restart: unless-stopped
+    depends_on:
+      forgejo:
+        condition: service_healthy
+      docker:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - forgejo-runner-container
+    user: 1000:1000
+    command: '/bin/sh /assets/scripts/startup.sh --config /assets/configs/config.yml'
+    volumes:
+      - type: bind
+        source: ./assets/runner
+        target: /assets
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: volume
+        source: forgejo-runner-data
+        target: /data
+    environment:
+      DOCKER_HOST: tcp://forgejo-docker-container:2375
+
+  proxy:
+    image: nginx:1.27
+    restart: unless-stopped
+    networks:
+      composes-frontend:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - type: bind
+        source: ./assets/proxy/configs/partial
+        target: /work/configs/partial
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./assets/proxy/configs/server
+        target: /etc/nginx/conf.d
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./assets/proxy/certs
+        target: /work/certs
+        read_only: true
+        bind:
+          create_host_path: false
+    environment:
+      - TZ=Asia/Tokyo
