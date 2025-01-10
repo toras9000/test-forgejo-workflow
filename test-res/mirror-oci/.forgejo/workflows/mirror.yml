@@ -1,0 +1,21 @@
+name: MirrorOciImages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 'TZ=Asia/Tokyo 0 3 * * * 4'
+
+jobs:
+  mirror:
+    runs-on: node-debian
+    container:
+      image: quay.io/skopeo/stable:latest
+    steps:
+      - name: Add self-signed cert
+        run: curl http://myserver.home/certs/ca.crt  >> /etc/ssl/certs/ca-certificates.crt
+      - name: Skopeo Login
+        run: skopeo login --username toras9000 --password "${{ secrets.PACKAGE_WRITABLE_TOKEN }}" forgejo.myserver.home
+      - name: Skopeo Copy
+        run: |
+          skopeo copy  docker://codeberg.org/forgejo/forgejo:11    docker://forgejo.myserver.home/toras9000/forgejo:11
+          skopeo copy  docker://code.forgejo.org/forgejo/runner:6  docker://forgejo.myserver.home/toras9000/forgejo-runner:6

@@ -1,0 +1,13 @@
+name: ScheduleTest
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: 'TZ=Asia/Tokyo 0,15,30,45 0-3 * * *'
+
+jobs:
+  show_vars:
+    runs-on: ubuntu
+    steps:
+      - run: date
