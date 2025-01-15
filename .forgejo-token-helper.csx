@@ -6,6 +6,7 @@ using Lestaly.Cx;
 
 public record ForgejoTokenInfo(string Service, string User, string Token);
 
+
 public class ForgejoServiceHelper
 {
     public required FileInfo ComposeFile { get; init; }
@@ -13,6 +14,19 @@ public class ForgejoServiceHelper
     public required Uri ServiceUrl { get; init; }
     public required string ApiUser { get; init; }
     public Action<string>? Logger { get; init; }
+
+    public async ValueTask<string> GenerateTokenAsync(string user, string name, string scopes = "all")
+    {
+        var token = await "docker".args([
+            "compose", "--file", this.ComposeFile.FullName, "exec", "-u", "1000", this.ContainerName,
+            "forgejo", "admin", "user", "generate-access-token",
+                "--raw",
+                "--username", user,
+                "--token-name", name,
+                "--scopes", scopes
+        ]).silent().result().success().output();
+        return token.Trim();
+    }
 
     public async ValueTask<ForgejoTokenInfo> TokenBind(FileInfo tokenFile)
     {
@@ -24,17 +38,10 @@ public class ForgejoServiceHelper
             this.Logger?.Invoke(" .. no valid info");
             this.Logger?.Invoke("Generate access token ...");
             var tokenName = $"test-token-{Guid.NewGuid()}";
-            var token = await "docker".args([
-                "compose", "--file", this.ComposeFile.FullName, "exec", "-u", "1000", this.ContainerName,
-                "forgejo", "admin", "user", "generate-access-token",
-                    "--raw",
-                    "--username", this.ApiUser,
-                    "--token-name", tokenName,
-                    "--scopes", "all"
-            ]).silent().result().success().output();
+            var token = await GenerateTokenAsync(this.ApiUser, tokenName, "all");
             this.Logger?.Invoke($" .. generated: {tokenName}");
 
-            tokenInfo = new(this.ServiceUrl.AbsoluteUri, this.ApiUser, token.Trim());
+            tokenInfo = new(this.ServiceUrl.AbsoluteUri, this.ApiUser, token);
             await scrambler.ScrambleObjectAsync(tokenInfo);
         }
         return tokenInfo;
