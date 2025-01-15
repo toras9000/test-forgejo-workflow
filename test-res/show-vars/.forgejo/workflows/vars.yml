@@ -1,0 +1,75 @@
+name: VarsTest
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  show_vars:
+    runs-on: ubuntu
+    steps:
+      - name: ---- Workflow token ----
+        run: echo 'Workflow token'
+      - run: echo 'GITHUB_TOKEN(by step) = ${{ GITHUB_TOKEN }}'
+      - run: echo 'github.token = ${{ github.token }}'
+      - run: echo 'env.GITHUB_TOKEN = ${{ env.GITHUB_TOKEN }}'
+      - run: echo 'secrets.FORGEJO_TOKEN = ${{ secrets.FORGEJO_TOKEN }}'
+      - run: echo 'secrets.GITHUB_TOKEN = ${{ secrets.GITHUB_TOKEN }}'
+      - run: echo 'secrets.GITEA_TOKEN = ${{ secrets.GITEA_TOKEN }}'
+
+      - name: ---- secrets ----
+        run: echo 'secrets'
+      - run: echo 'secrets.SELF_SIGNED_CERT = ${{ secrets.SELF_SIGNED_CERT  }}'
+
+      - name: ---- vars ----
+        run: echo 'vars'
+      - run: echo 'vars.TEST_VERIABLE = ${{ vars.TEST_VERIABLE  }}'
+
+      - name: ---- env ----
+        run: echo 'env'
+      - run: echo 'env.CI = ${{ env.CI  }}'
+      - run: echo 'env.GITHUB_ACTION = ${{ env.GITHUB_ACTION  }}'
+      - run: echo 'env.GITHUB_ACTION_PATH = ${{ env.GITHUB_ACTION_PATH  }}'
+      - run: echo 'env.GITHUB_ACTION_REPOSITORY = ${{ env.GITHUB_ACTION_REPOSITORY  }}'
+      - run: echo 'env.GITHUB_ACTIONS = ${{ env.GITHUB_ACTIONS  }}'
+      - run: echo 'env.GITHUB_ACTOR = ${{ env.GITHUB_ACTOR  }}'
+      - run: echo 'env.GITHUB_API_URL = ${{ env.GITHUB_API_URL  }}'
+      - run: echo 'env.GITHUB_BASE_REF = ${{ env.GITHUB_BASE_REF  }}'
+      - run: echo 'env.GITHUB_HEAD_REF = ${{ env.GITHUB_HEAD_REF  }}'
+      - run: echo 'env.GITHUB_ENV = ${{ env.GITHUB_ENV  }}'
+      - run: echo 'env.GITHUB_EVENT_NAME = ${{ env.GITHUB_EVENT_NAME  }}'
+      - run: echo 'env.GITHUB_EVENT_PATH = ${{ env.GITHUB_EVENT_PATH  }}'
+      - run: echo 'env.GITHUB_JOB = ${{ env.GITHUB_JOB  }}'
+      - run: echo 'env.GITHUB_OUTPUT = ${{ env.GITHUB_OUTPUT  }}'
+      - run: echo 'env.GITHUB_PATH = ${{ env.GITHUB_PATH  }}'
+      - run: echo 'env.GITHUB_REF = ${{ env.GITHUB_REF  }}'
+      - run: echo 'env.GITHUB_REF_NAME = ${{ env.GITHUB_REF_NAME  }}'
+      - run: echo 'env.GITHUB_REPOSITORY = ${{ env.GITHUB_REPOSITORY  }}'
+      - run: echo 'env.GITHUB_REPOSITORY_OWNER = ${{ env.GITHUB_REPOSITORY_OWNER  }}'
+      - run: echo 'env.GITHUB_RUN_NUMBER = ${{ env.GITHUB_RUN_NUMBER  }}'
+      - run: echo 'env.GITHUB_SERVER_URL = ${{ env.GITHUB_SERVER_URL  }}'
+      - run: echo 'env.GITHUB_SHA = ${{ env.GITHUB_SHA  }}'
+      - run: echo 'env.GITHUB_STEP_SUMMARY = ${{ env.GITHUB_STEP_SUMMARY  }}'
+      - run: echo 'env.GITHUB_TOKEN = ${{ env.GITHUB_TOKEN  }}'
+      - run: echo 'env.GITHUB_WORKSPACE = ${{ env.GITHUB_WORKSPACE  }}'
+
+      - name: ---- github ----
+        run: echo 'github'
+      - run: echo 'github.action_path = ${{ github.action_path  }}'
+      - run: echo 'github.action_repository = ${{ github.action_repository  }}'
+      - run: echo 'github.actions = ${{ github.actions  }}'
+      - run: echo 'github.actor = ${{ github.actor  }}'
+      - run: echo 'github.api_url = ${{ github.api_url  }}'
+      - run: echo 'github.event_name = ${{ github.event_name  }}'
+      - run: echo 'github.event_path = ${{ github.event_path  }}'
+      - run: echo 'github.job = ${{ github.job  }}'
+      - run: echo 'github.output = ${{ github.output  }}'
+      - run: echo 'github.ref = ${{ github.ref  }}'
+      - run: echo 'github.ref_name = ${{ github.ref_name  }}'
+      - run: echo 'github.repository = ${{ github.repository  }}'
+      - run: echo 'github.repository_owner = ${{ github.repository_owner  }}'
+      - run: echo 'github.run_number = ${{ github.run_number  }}'
+      - run: echo 'github.server_url = ${{ github.server_url  }}'
+      - run: echo 'github.sha = ${{ github.sha  }}'
+      - run: echo 'github.token = ${{ github.token  }}'
+      - run: echo 'github.workspace = ${{ github.workspace  }}'

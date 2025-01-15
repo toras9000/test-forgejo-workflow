@@ -1,0 +1,59 @@
+name: DockerImageBuild
+
+on:
+  push:
+    branches:
+#      - 'main'
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  bake:
+    runs-on: node-debian
+    steps:
+      - name: Add packages
+        run: apt-get update && apt-get install -y sudo curl iptables
+
+      - name: Add self-signed cert
+        run: |
+          curl http://myserver.home/certs/ca.crt -o /tmp/my-ca.crt
+          cat /tmp/my-ca.crt >> /etc/ssl/certs/ca-certificates.crt
+
+      - name: Checkout repository
+        uses: https://github.com/actions/checkout@v4
+
+      - name: Setup Docker
+        uses: https://github.com/docker/setup-docker-action@v4
+
+      - name: Set up Docker Buildx
+        uses: https://github.com/docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+          buildkitd-config-inline: |
+            [dns]
+              nameservers=["192.168.10.1"]
+            [registry."forgejo.myserver.home"]
+              ca=["/tmp/my-ca.crt"]
+
+      - name: Setup QEMU
+        uses: https://github.com/docker/setup-qemu-action@v3
+
+      - name: Login to DockerHub
+        uses: https://github.com/docker/login-action@v3
+        with:
+          registry: forgejo.myserver.home
+          username: ${{ env.GITHUB_REPOSITORY_OWNER }}
+          password: ${{ secrets.PACKAGE_WRITABLE_TOKEN }}
+
+      - name: Build and push
+        uses: https://github.com/docker/bake-action@v6
+        with:
+          source: .
+          files: ./docker-bake.hcl
+          pull: true
+          push: true
+          set: |
+            *.tags=forgejo.myserver.home/${{ env.GITHUB_REPOSITORY }}:${{ env.GITHUB_REF_NAME }}
+        env:
+          FORGEJO_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}

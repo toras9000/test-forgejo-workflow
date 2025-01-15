@@ -1,0 +1,41 @@
+name: NuGetPackageBuild
+
+on:
+  push:
+    branches:
+#      - 'main'
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  bake:
+    runs-on: dotnet-sdk
+    steps:
+      - name: Add packages
+        run: apt-get update && apt-get install -y nodejs
+
+      - name: Add self-signed cert
+        run: curl http://myserver.home/certs/ca.crt >> /etc/ssl/certs/ca-certificates.crt
+
+      - name: Checkout repository
+        uses: https://github.com/actions/checkout@v4
+
+      - name: Make version string
+        id: extract-version
+        uses: https://github.com/actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const name = '${{ env.GITHUB_REF_NAME }}';
+            return name.startsWith('v') ? name.substring(1) : name;
+
+      - name: Build package
+        run: dotnet build src -c Release
+
+      - name: Publish package
+        run: |
+          dotnet nuget push \
+            --source https://forgejo.myserver.home/api/packages/${{ env.GITHUB_REPOSITORY_OWNER }}/nuget/index.json \
+            --api-key "${{ secrets.PACKAGE_WRITABLE_TOKEN }}" \
+            packages/Release/build_nupkg.${{steps.extract-version.outputs.result}}.nupkg
+
