@@ -24,7 +24,11 @@ var settings = new
 
     TargetUser = "toras9000",
     ResourcesDir = ThisSource.RelativeDirectory("test-res"),
-    TemplateName = "bake-image",
+    TemplateNames = new[]
+    {
+        "bake-image",
+        "build-nupkg",
+    },
 };
 
 record TestTokenInfo(string Service, string User, string Token);
@@ -43,33 +47,36 @@ await Paved.RunAsync(config: c => c.AnyPause(), action: async () =>
     WriteLine(Chalk.Gray[$"  .. User: {apiUser.login}"]);
     WriteLine();
 
-    WriteLine("Create repository ...");
-    var repoPath = $"{settings.TargetUser}/{settings.TemplateName}";
-    WriteLine($"  .. {repoPath}");
-    var sudoClient = forgejo.Sudo(settings.TargetUser);
-    var repos = await sudoClient.Repository.SearchAsync(q: repoPath, cancelToken: signal.Token);
-    if (repos.data?.Any(r => r.full_name == repoPath) == true)
+    WriteLine("Create repositories ...");
+    foreach (var templateName in settings.TemplateNames)
     {
-        WriteLine(Chalk.Gray[$"  .. Already repository exists."]);
-        return;
-    }
-    var repo = await sudoClient.Repository.CreateAsync(new(name: settings.TemplateName), cancelToken: signal.Token);
-    WriteLine(Chalk.Green["  .. Created"]);
+        var repoPath = $"{settings.TargetUser}/{templateName}";
+        WriteLine($"  {repoPath}");
+        var sudoClient = forgejo.Sudo(settings.TargetUser);
+        var repos = await sudoClient.Repository.SearchAsync(q: repoPath, cancelToken: signal.Token);
+        if (repos.data?.Any(r => r.full_name == repoPath) == true)
+        {
+            WriteLine(Chalk.Gray[$"  .. Already repository exists."]);
+            return;
+        }
+        var repo = await sudoClient.Repository.CreateAsync(new(name: templateName), cancelToken: signal.Token);
+        WriteLine(Chalk.Green["  .. Created"]);
 
-    WriteLine("Add files to repository ...");
-    var templateDir = settings.ResourcesDir.RelativeDirectory(settings.TemplateName);
-    var files = new List<ChangeFileOperation>();
-    foreach (var file in templateDir.EnumerateFiles("*", SearchOption.AllDirectories))
-    {
-        var relPath = file.RelativePathFrom(templateDir, ignoreCase: true).Replace('\\', '/');
-        var content = Convert.ToBase64String(file.ReadAllBytes());
-        files.Add(new(ChangeFileOperationOperation.Create, path: relPath, content));
-    }
-    await sudoClient.Repository.UpdateFilesAsync(settings.TargetUser, settings.TemplateName, new(files: files), cancelToken: signal.Token);
-    WriteLine(Chalk.Green["  .. Added"]);
+        WriteLine("  .. Add files to repository ...");
+        var templateDir = settings.ResourcesDir.RelativeDirectory(templateName);
+        var files = new List<ChangeFileOperation>();
+        foreach (var file in templateDir.EnumerateFiles("*", SearchOption.AllDirectories))
+        {
+            var relPath = file.RelativePathFrom(templateDir, ignoreCase: true).Replace('\\', '/');
+            var content = Convert.ToBase64String(file.ReadAllBytes());
+            files.Add(new(ChangeFileOperationOperation.Create, path: relPath, content));
+        }
+        await sudoClient.Repository.UpdateFilesAsync(settings.TargetUser, templateName, new(files: files), cancelToken: signal.Token);
+        WriteLine(Chalk.Green["  .. Added"]);
 
-    WriteLine("Add branch to repository ...");
-    await sudoClient.Repository.CreateBranchAsync(settings.TargetUser, settings.TemplateName, new(new_branch_name: "v0.0.0"), cancelToken: signal.Token);
-    WriteLine(Chalk.Green["  .. Added"]);
+        WriteLine("  .. Add branch to repository ...");
+        await sudoClient.Repository.CreateBranchAsync(settings.TargetUser, templateName, new(new_branch_name: "v0.0.0"), cancelToken: signal.Token);
+        WriteLine(Chalk.Green["  .. Added"]);
+    }
 
 });
