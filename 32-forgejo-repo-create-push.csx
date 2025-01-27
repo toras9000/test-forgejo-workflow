@@ -28,6 +28,7 @@ var settings = new
     {
         "bake-image",
         "build-nupkg",
+        "show-vars",
     },
 };
 
