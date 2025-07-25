@@ -1,6 +1,6 @@
 #!/usr/bin/env dotnet-script
-#r "nuget: ForgejoApiClient, 11.0.0-rev.1"
-#r "nuget: Lestaly, 0.79.0"
+#r "nuget: ForgejoApiClient, 12.0.1-rev.1"
+#r "nuget: Lestaly.General, 0.100.0"
 #r "nuget: Kokuban, 0.2.0"
 #load ".forgejo-token-helper.csx"
 #nullable enable

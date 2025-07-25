@@ -25,7 +25,7 @@ jobs:
       - name: Setup Docker
         uses: https://github.com/docker/setup-docker-action@v4
 
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: https://github.com/docker/setup-buildx-action@v3
         with:
           driver-opts: |
@@ -39,14 +39,14 @@ jobs:
       - name: Setup QEMU
         uses: https://github.com/docker/setup-qemu-action@v3
 
-      - name: Login to DockerHub
+      - name: Login to Forgejo
         uses: https://github.com/docker/login-action@v3
         with:
           registry: forgejo.myserver.home
-          username: ${{ env.GITHUB_REPOSITORY_OWNER }}
+          username: ${{ env.FORGEJO_REPOSITORY_OWNER }}
           password: ${{ secrets.PACKAGE_WRITABLE_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push to Forgejo
         uses: https://github.com/docker/bake-action@v6
         with:
           source: .
@@ -54,6 +54,6 @@ jobs:
           pull: true
           push: true
           set: |
-            *.tags=forgejo.myserver.home/${{ env.GITHUB_REPOSITORY }}:${{ env.GITHUB_REF_NAME }}
+            *.tags=forgejo.myserver.home/${{ env.FORGEJO_REPOSITORY }}:${{ env.FORGEJO_REF_NAME }}
         env:
-          FORGEJO_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORGEJO_ACCESS_TOKEN: ${{ secrets.FORGEJO_TOKEN }}

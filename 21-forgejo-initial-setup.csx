@@ -1,6 +1,6 @@
 #!/usr/bin/env dotnet-script
 #r "nuget: AngleSharp, 1.3.0"
-#r "nuget: Lestaly, 0.79.0"
+#r "nuget: Lestaly.General, 0.100.0"
 #r "nuget: Kokuban, 0.2.0"
 #nullable enable
 using System.Net;

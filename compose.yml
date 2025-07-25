@@ -9,7 +9,7 @@ networks:
 
 services:
   forgejo:
-    image: codeberg.org/forgejo/forgejo:11
+    image: codeberg.org/forgejo/forgejo:12
     restart: unless-stopped
     command: sh -c "
           cat /work/certs/ca/ca.crt >> /etc/ssl/certs/ca-certificates.crt
@@ -83,7 +83,7 @@ services:
       additional_contexts:
         certs: ./assets/proxy/certs/ca
       args:
-        - RUNNER_VERSION=6
+        - RUNNER_VERSION=7
     restart: unless-stopped
     depends_on:
       forgejo:
@@ -110,7 +110,7 @@ services:
       DOCKER_HOST: tcp://forgejo-docker-container:2375
 
   proxy:
-    image: nginx:1.27
+    image: nginx:1.28
     restart: unless-stopped
     networks:
       composes-frontend:
