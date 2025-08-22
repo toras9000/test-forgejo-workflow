@@ -1,6 +1,6 @@
 #!/usr/bin/env dotnet-script
-#r "nuget: ForgejoApiClient, 12.0.1-rev.1"
-#r "nuget: Lestaly.General, 0.100.0"
+#r "nuget: ForgejoApiClient, 12.0.1-rev.4"
+#r "nuget: Lestaly.General, 0.102.0"
 #r "nuget: Kokuban, 0.2.0"
 #load ".forgejo-token-helper.csx"
 #nullable enable
@@ -45,7 +45,7 @@ return await Paved.ProceedAsync(noPause: Args.RoughContains("--nopause"), async 
     WriteLine("Set action secret ...");
     using var sudoClient = forgejo.Sudo(settings.TargetUser);
     var content = await settings.CertPemFile.ReadAllTextAsync(signal.Token);
-    await sudoClient.User.SetActionSecretAsync(settings.VariableName, new(content));
+    await sudoClient.User.SetActionsSecretAsync(settings.VariableName, new(content));
     WriteLine(Chalk.Green[$"  .. OK"]);
 
 });

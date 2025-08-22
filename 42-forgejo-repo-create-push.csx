@@ -1,6 +1,6 @@
 #!/usr/bin/env dotnet-script
-#r "nuget: ForgejoApiClient, 12.0.1-rev.1"
-#r "nuget: Lestaly.General, 0.100.0"
+#r "nuget: ForgejoApiClient, 12.0.1-rev.4"
+#r "nuget: Lestaly.General, 0.102.0"
 #r "nuget: Kokuban, 0.2.0"
 #load ".forgejo-token-helper.csx"
 #nullable enable
@@ -23,7 +23,7 @@ var settings = new
     ApiTokenFile = ThisSource.RelativeFile(".auth-forgejo-api"),
 
     TargetUser = "toras9000",
-    ResourcesDir = ThisSource.RelativeDirectory("test-res"),
+    ResourcesDir = ThisSource.RelativeDirectory("test-repos"),
     TemplateNames = new[]
     {
         "bake-image",

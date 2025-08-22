@@ -1,15 +1,10 @@
 #!/usr/bin/env dotnet-script
 #r "nuget: Kokuban, 0.2.0"
-#r "nuget: Lestaly.General, 0.100.0"
+#r "nuget: Lestaly.General, 0.102.0"
 #nullable enable
-using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Kokuban;
 using Lestaly;
-
-// Rewrite the version of the script to the specified version.
-// The vscode/C# extension recognizes only one package version for all scripts in the workspace.
-// If there are discrepancies, the IntelliSense will not work properly, so the versions should be aligned.
 
 var settings = new
 {
@@ -19,16 +14,17 @@ var settings = new
     // Packages and versions to be unified and updated
     Packages = new PackageVersion[]
     {
-        new("Lestaly.General",                       "0.100.0"),
-        new("Kokuban",                               "0.2.0"),
-        new("AngleSharp",                            "1.3.0"),
-        new("ForgejoApiClient"                  ,    "12.0.1-rev.1"),
+        new("Lestaly.General",    "0.102.0"       ),
+        new("Kokuban",            "0.2.0"         ),
+        new("AngleSharp",         "1.3.0"         ),
+        new("ForgejoApiClient",   "12.0.1-rev.4"  ),
+        new("R3",                 "1.3.0"         ),
+        new("NuGet.Protocol",     "6.14.0"        ),
     },
 };
 
-return await Paved.RunAsync(async (options) =>
+return await Paved.ProceedAsync(async () =>
 {
-    options.AnyPause();
     // Detection regular expression for package reference directives
     var detector = new Regex(@"^\s*#\s*r\s+""\s*nuget\s*:\s*(?<package>[a-zA-Z0-9_\-\.]+)(?:,| )\s*(?<version>.+)\s*""");
 
@@ -65,14 +61,14 @@ return await Paved.RunAsync(async (options) =>
             // Parse the version number.
             if (!SemanticVersion.TryParse(match.Groups["version"].Value, out var pkgVer))
             {
-                WriteLine(Chalk.BrightYellow[$"  Skip: Unable to recognize version number"]);
+                WriteLine(Chalk.Yellow[$"  Skip: Unable to recognize version number"]);
                 continue;
             }
 
             // Determine if the package version needs to be updated.
             if (pkgVer == package.SemanticVersion)
             {
-                WriteLine(Chalk.BrightYellow[$"  Skip: {pkgName} - Already in version"]);
+                WriteLine(Chalk.Gray[$"  Skip: {pkgName} - Already in version"]);
                 continue;
             }
 
@@ -92,7 +88,7 @@ return await Paved.RunAsync(async (options) =>
         }
         else if (!detected)
         {
-            WriteLine(Chalk.BrightYellow[$"  Directive not found"]);
+            WriteLine(Chalk.Gray[$"  Directive not found"]);
         }
     }
 

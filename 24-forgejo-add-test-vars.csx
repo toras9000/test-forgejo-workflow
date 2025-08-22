@@ -1,6 +1,6 @@
 #!/usr/bin/env dotnet-script
-#r "nuget: ForgejoApiClient, 12.0.1-rev.1"
-#r "nuget: Lestaly.General, 0.100.0"
+#r "nuget: ForgejoApiClient, 12.0.1-rev.4"
+#r "nuget: Lestaly.General, 0.102.0"
 #r "nuget: Kokuban, 0.2.0"
 #load ".forgejo-token-helper.csx"
 #nullable enable
@@ -44,7 +44,7 @@ return await Paved.ProceedAsync(noPause: Args.RoughContains("--nopause"), async 
     WriteLine("Set action variable ...");
     using var sudoClient = forgejo.Sudo(settings.TargetUser);
     var content = "test-variable-content";
-    await sudoClient.User.CreateActionVariableAsync(settings.VariableName, new(content));
+    await sudoClient.User.CreateActionsVariableAsync(settings.VariableName, new(content));
     WriteLine(Chalk.Green[$"  .. OK"]);
 
 });

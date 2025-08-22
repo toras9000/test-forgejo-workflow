@@ -83,7 +83,7 @@ services:
       additional_contexts:
         certs: ./assets/proxy/certs/ca
       args:
-        - RUNNER_VERSION=7
+        - RUNNER_VERSION=9
     restart: unless-stopped
     depends_on:
       forgejo:
