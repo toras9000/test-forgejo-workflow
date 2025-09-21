@@ -1,6 +1,6 @@
 #!/usr/bin/env dotnet-script
 #r "nuget: Kokuban, 0.2.0"
-#r "nuget: Lestaly.General, 0.102.0"
+#r "nuget: Lestaly.General, 0.103.0"
 #nullable enable
 using System.Text.RegularExpressions;
 using Kokuban;
@@ -14,7 +14,7 @@ var settings = new
     // Packages and versions to be unified and updated
     Packages = new PackageVersion[]
     {
-        new("Lestaly.General",    "0.102.0"       ),
+        new("Lestaly.General",    "0.103.0"       ),
         new("Kokuban",            "0.2.0"         ),
         new("AngleSharp",         "1.3.0"         ),
         new("ForgejoApiClient",   "12.0.1-rev.4"  ),
