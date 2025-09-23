@@ -56,8 +56,6 @@ services:
       - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
       - FORGEJO__service_0x2E_explore__REQUIRE_SIGNIN_VIEW=true
       - FORGEJO__migrations__ALLOW_LOCALNETWORKS=true
-      - FORGEJO__quota__ENABLED=true
-      - FORGEJO__quota_0x2E_default__TOTAL=8G
 
   docker:
     image: docker:dind
@@ -67,7 +65,10 @@ services:
       default:
         aliases:
           - forgejo-docker-container
-    command: ['dockerd', '-H', 'tcp://0.0.0.0:2375', '--tls=false']
+    command: sh -c "
+          cat /work/certs/ca/ca.crt >> /etc/ssl/certs/ca-certificates.crt
+       && dockerd -H 'tcp://0.0.0.0:2375' --tls=false
+      "
     healthcheck:
       test: docker -H tcp://localhost:2375 info || exit 1
       start_period: 60s
@@ -75,6 +76,13 @@ services:
       timeout: 5s
       interval: 300s
       retries: 3
+    volumes:
+      - type: bind
+        source: ./assets/proxy/certs
+        target: /work/certs
+        read_only: true
+        bind:
+          create_host_path: false
 
   runner:
     image: my/runner
@@ -83,7 +91,7 @@ services:
       additional_contexts:
         certs: ./assets/proxy/certs/ca
       args:
-        - RUNNER_VERSION=9
+        - RUNNER_VERSION=11
     restart: unless-stopped
     depends_on:
       forgejo:

@@ -25,6 +25,9 @@ jobs:
       - name: Setup Docker
         uses: https://github.com/docker/setup-docker-action@v4
 
+      - name: Setup QEMU
+        uses: https://github.com/docker/setup-qemu-action@v3
+
       - name: Setup Docker Buildx
         uses: https://github.com/docker/setup-buildx-action@v3
         with:
@@ -35,9 +38,6 @@ jobs:
               nameservers=["192.168.10.1"]
             [registry."forgejo.myserver.home"]
               ca=["/tmp/my-ca.crt"]
-
-      - name: Setup QEMU
-        uses: https://github.com/docker/setup-qemu-action@v3
 
       - name: Login to Forgejo
         uses: https://github.com/docker/login-action@v3

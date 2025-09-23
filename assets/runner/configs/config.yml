@@ -3,10 +3,19 @@
 # You don't have to copy this file to your instance,
 # just run `forgejo-runner generate-config > config.yaml` to generate a config file.
 
+#
+# The value of level or job_level can be trace, debug, info, warn, error or fatal
+#
 log:
-  # The level of logging, can be trace, debug, info, warn, error, fatal
+  #
+  # What is displayed in the output of the runner process but not sent
+  # to the Forgejo instance.
+  #
   level: info
-  # The level of logging for jobs, can be trace, debug, info, earn, error, fatal
+  #
+  # What is sent to the Forgejo instance and therefore
+  # visible in the web UI for a given job.
+  #
   job_level: info
 
 runner:
@@ -43,33 +52,121 @@ runner:
   # Like: ["macos-arm64:host", "ubuntu-latest:docker://node:20-bookworm", "ubuntu-22.04:docker://node:20-bookworm"]
   # If it's empty when registering, it will ask for inputting labels.
   # If it's empty when executing the `daemon`, it will use labels in the `.runner` file.
-  labels: []
+  labels: [
+    "ubuntu:docker://ubuntu:24.04",
+    "ubuntu-24.04:docker://ubuntu:24.04",
+    "ubuntu-22.04:docker://ubuntu:22.04",
+    "debian:docker://debian:12",
+    "debian-12:docker://debian:12",
+    "debian-11:docker://debian:11",
+    "node-debian:docker://node:20-bookworm",
+    "node-20-debian-12:docker://node:20-bookworm",
+    "node-20-debian-11:docker://node:20-bullseye",
+    "docker-cli:docker://code.forgejo.org/oci/docker:cli",
+    "dotnet-sdk:docker://mcr.microsoft.com/dotnet/sdk:9.0",
+    "dotnet-sdk-9:docker://mcr.microsoft.com/dotnet/sdk:9.0"
+  ]
 
 cache:
-  # Enable cache server to use actions/cache.
+  #
+  # When enabled, workflows will be given the ACTIONS_CACHE_URL environment variable
+  # used by the https://code.forgejo.org/actions/cache action. The server at this
+  # URL must implement a compliant REST API and it must also be reachable from
+  # the container or host running the workflows.
+  #
+  # See also https://forgejo.org/docs/next/user/actions/advanced-features/#cache
+  #
+  # When it is not enabled, none of the following options apply.
+  #
+  # It works as follows:
+  #
+  # - the workflow is given a one time use ACTIONS_CACHE_URL
+  # - a cache proxy listens to ACTIONS_CACHE_URL
+  # - the cache proxy securely communicates with the cache server using
+  #   a shared secret
+  #
   enabled: true
-  # The directory to store the cache data.
-  # If it's empty, the cache data will be stored in $HOME/.cache/actcache.
-  dir: ""
-  # The host of the cache server.
-  # It's not for the address to listen, but the address to connect from job containers.
-  # So 0.0.0.0 is a bad choice, leave it empty to detect automatically.
-  host: ""
-  # The port of the cache server.
+  #
+  #######################################################################
+  #
+  # Only used for the internal cache server.
+  #
+  # If external_server is not set, the Forgejo runner will spawn a
+  # cache server that will be used by the cache proxy.
+  #
+  #######################################################################
+  #
+  # The port bound by the internal cache server.
   # 0 means to use a random available port.
+  #
   port: 0
-  # The port of the cache proxy.
-  # 0 means to use a random available port.
-  proxy_port: 0
-  # The external cache server URL. Valid only when enable is true.
-  # If it's specified, it will be used to set the ACTIONS_CACHE_URL environment variable. The URL should generally end with "/".
-  # Otherwise it will be set to the the URL of the internal cache server.
+  #
+  # The directory to store the cache data.
+  #
+  # If empty, the cache data will be stored in $HOME/.cache/actcache.
+  #
+  dir: ""
+  #
+  #######################################################################
+  #
+  # Only used for the external cache server.
+  #
+  # If external_server is set, the internal cache server is not
+  # spawned.
+  #
+  #######################################################################
+  #
+  # The URL of the cache server. The URL should generally end with
+  # "/". The cache proxy will forward requests to the external
+  # server. The requests are authenticated with the "secret" that is
+  # shared with the external server.
+  #
   external_server: ""
-  # The shared cache secret. When communicating with a cache server, the runner uses this secret to verify the authenticity of the cache requests.
-  # When using an external cache server it is required to set the same secret for the runner and the cache server.
+  #
+  #######################################################################
+  #
+  # Common to the internal and external cache server
+  #
+  #######################################################################
+  #
+  # The shared cache secret used to secure the communications between
+  # the cache proxy and the cache server.
+  #
+  # If empty, it will be generated to a new secret automatically when
+  # the server starts and it will stay the same until it restarts.
+  #
+  # Every time the secret is modified, all cache entries that were
+  # created with it are invalidated. In order to ensure that the cache
+  # content is reused when the runner restarts, this secret must be
+  # set, for instance with the output of openssl rand -hex 40.
+  #
   secret: ""
-  # Overrides the ACTIONS_CACHE_URL passed to workflow containers. This should only be used if the runner host is not reachable from the
-  # workflow containers, and requires further setup.
+  #
+  # The IP or hostname (195.84.20.30 or example.com) to use when constructing
+  # ACTIONS_CACHE_URL which is the URL of the cache proxy.
+  #
+  # If empty it will be detected automatically.
+  #
+  # If the containers or host running the workflows reside on a
+  # different network than the Forgejo runner (for instance when the
+  # docker server used to create containers is not running on the same
+  # host as the Forgejo runner), it may be impossible to figure that
+  # out automatically. In that case you can specifify which IP or
+  # hostname to use to reach the internal cache server created by the
+  # Forgejo runner.
+  #
+  host: ""
+  #
+  # The port bound by the internal cache proxy.
+  # 0 means to use a random available port.
+  #
+  proxy_port: 0
+  #
+  # Overrides the ACTIONS_CACHE_URL variable passed to workflow
+  # containers. The URL should generally not end with "/". This should only
+  # be used if the runner host is not reachable from the workflow containers,
+  # and requires further setup.
+  #
   actions_cache_url_override: ""
 
 container:
