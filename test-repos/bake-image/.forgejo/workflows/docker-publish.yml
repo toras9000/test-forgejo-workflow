@@ -35,7 +35,7 @@ jobs:
             network=host
           buildkitd-config-inline: |
             [dns]
-              nameservers=["192.168.10.1"]
+              nameservers=["127.0.0.11"]
             [registry."forgejo.myserver.home"]
               ca=["/tmp/my-ca.crt"]
 
