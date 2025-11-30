@@ -1,0 +1,5 @@
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.114.0
+using Lestaly;
+
+await CmdShell.ExecAsync("https://forgejo.myserver.home");

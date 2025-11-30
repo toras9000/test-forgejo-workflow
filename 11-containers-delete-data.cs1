@@ -1,0 +1,22 @@
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.114.0
+using Lestaly;
+using Lestaly.Cx;
+
+var settings = new
+{
+    ApiTokenFile = ThisSource.RelativeFile(".auth-forgejo-api"),
+};
+
+return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
+{
+    Console.WriteLine("Stop service & delete volume ...");
+    var composeFile = ThisSource.RelativeFile("./compose.yml");
+    await "docker".args("compose", "--file", composeFile, "down", "--remove-orphans", "--volumes").result().success();
+
+    Console.WriteLine("Delete auth file ...");
+    settings.ApiTokenFile.Delete();
+});
+
+record TestUserCredential(string Username, string Password);
+record TestServiceInfo(string Url, TestUserCredential Admin, string Token);

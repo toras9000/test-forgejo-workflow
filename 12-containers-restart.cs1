@@ -1,14 +1,13 @@
-#!/usr/bin/env dotnet-script
-#r "nuget: Lestaly.General, 0.103.0"
-#nullable enable
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.114.0
 using Lestaly;
 using Lestaly.Cx;
 
-return await Paved.ProceedAsync(noPause: Args.RoughContains("--nopause"), async () =>
+return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
 {
-    WriteLine($"Restart service ...");
+    Console.WriteLine($"Restart service ...");
     var composeFile = ThisSource.RelativeFile("./compose.yml");
     await "docker".args("compose", "--file", composeFile, "down", "--remove-orphans").echo().result().success();
     await "docker".args("compose", "--file", composeFile, "up", "-d", "--wait").echo().result().success();
-    WriteLine("Container up completed.");
+    Console.WriteLine("Container up completed.");
 });

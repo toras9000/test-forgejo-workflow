@@ -1,7 +1,6 @@
-#!/usr/bin/env dotnet-script
-#r "nuget: Lestaly.General, 0.103.0"
-#r "nuget: Kokuban, 0.2.0"
-#nullable enable
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.114.0
+#:package Kokuban@0.2.0
 using Kokuban;
 using Lestaly;
 using Lestaly.Cx;
@@ -19,19 +18,19 @@ var settings = new
 
 };
 
-return await Paved.ProceedAsync(noPause: Args.RoughContains("--nopause"), async () =>
+return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
 {
     using var signal = new SignalCancellationPeriod();
-    using var outenc = ConsoleWig.OutputEncodingPeriod(Encoding.UTF8);
+    using var outenc = Console.OutputUtf8EncodingPeriod();
 
-    WriteLine("Get runner token");
+    Console.WriteLine("Get runner token");
     var runnerToken = await "docker".args("compose", "--file", settings.ComposeFile,
         "exec", "--user", "1000", settings.ForgejoContainer,
         "forgejo", "forgejo-cli", "actions", "generate-runner-token"
     ).silent().cancelby(signal.Token).result().success().output(trim: true);
-    WriteLine($".. Token: {runnerToken.Trim()}");
+    Console.WriteLine($".. Token: {runnerToken.Trim()}");
 
-    WriteLine("Register runner");
+    Console.WriteLine("Register runner");
     await "docker".args("compose", "--file", settings.ComposeFile,
        "run", "--rm", settings.RunnerContainer,
        "forgejo-runner", "register",
@@ -40,5 +39,5 @@ return await Paved.ProceedAsync(noPause: Args.RoughContains("--nopause"), async 
             "--instance", settings.ForgejoURL,
             "--token", runnerToken
     ).echo().cancelby(signal.Token).result().success();
-    WriteLine(Chalk.Green[".. Completed"]);
+    Console.WriteLine(Chalk.Green[".. Completed"]);
 });

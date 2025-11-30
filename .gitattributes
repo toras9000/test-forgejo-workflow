@@ -2,6 +2,8 @@
 
 *.bat           text eol=crlf
 *.sh            text eol=lf
+*.cs            text
+*.cs1           text
 *.csx           text
 *.txt           text
 *.yml           text eol=lf

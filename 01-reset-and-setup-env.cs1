@@ -1,0 +1,17 @@
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.114.0
+using Lestaly;
+using Lestaly.Cx;
+
+return await Paved.ProceedAsync(async () =>
+{
+    await "dotnet".args("run", "--file", "11-containers-delete-data.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "12-containers-restart.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "21-forgejo-initial-setup.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "22-forgejo-create-entities.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "23-forgejo-add-cert-secret.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "24-forgejo-add-test-vars.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "31-forgejo-runner-setup.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "41-forgejo-add-access-token-secret.cs1", "--", "--nopause").echo().result().success();
+    await "dotnet".args("run", "--file", "42-forgejo-repo-create-push.cs1", "--", "--nopause").echo().result().success();
+});

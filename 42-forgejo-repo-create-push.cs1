@@ -1,14 +1,15 @@
-#!/usr/bin/env dotnet-script
-#r "nuget: ForgejoApiClient, 12.0.1-rev.4"
-#r "nuget: Lestaly.General, 0.103.0"
-#r "nuget: Kokuban, 0.2.0"
-#load ".forgejo-token-helper.csx"
-#nullable enable
+#!/usr/bin/env -S dotnet run --file
+#:package ForgejoApiClient@13.0.0-rev.1
+#:package Lestaly.General@0.114.0
+#:package Kokuban@0.2.0
+#:package RefFile@0.1.1
+#:property PublishAot=false
 using ForgejoApiClient;
 using ForgejoApiClient.Api;
 using Kokuban;
 using Lestaly;
-using Lestaly.Cx;
+
+[assembly: RefFile(".forgejo-token-helper.cs1")]
 
 var settings = new
 {
@@ -34,38 +35,36 @@ var settings = new
     },
 };
 
-record TestTokenInfo(string Service, string User, string Token);
-
-return await Paved.ProceedAsync(noPause: Args.RoughContains("--nopause"), async () =>
+return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
 {
     using var signal = new SignalCancellationPeriod();
-    using var outenc = ConsoleWig.OutputEncodingPeriod(Encoding.UTF8);
+    using var outenc = Console.OutputUtf8EncodingPeriod();
 
     // Load or Generate token
     var tokenInfo = await settings.Helper.TokenBind(settings.ApiTokenFile);
 
-    WriteLine("Create Forgejo client ...");
+    Console.WriteLine("Create Forgejo client ...");
     using var forgejo = new ForgejoClient(new(tokenInfo.Service), tokenInfo.Token);
     var apiUser = await forgejo.User.GetMeAsync(cancelToken: signal.Token);
-    WriteLine(Chalk.Gray[$"  .. User: {apiUser.login}"]);
-    WriteLine();
+    Console.WriteLine(Chalk.Gray[$"  .. User: {apiUser.login}"]);
+    Console.WriteLine();
 
-    WriteLine("Create repositories ...");
+    Console.WriteLine("Create repositories ...");
     foreach (var templateName in settings.TemplateNames)
     {
         var repoPath = $"{settings.TargetUser}/{templateName}";
-        WriteLine($"  {repoPath}");
+        Console.WriteLine($"  {repoPath}");
         using var sudoClient = forgejo.Sudo(settings.TargetUser);
         var repos = await sudoClient.Repository.SearchAsync(q: repoPath, cancelToken: signal.Token);
         if (repos.data?.Any(r => r.full_name == repoPath) == true)
         {
-            WriteLine(Chalk.Gray[$"  .. Already repository exists."]);
+            Console.WriteLine(Chalk.Gray[$"  .. Already repository exists."]);
             continue;
         }
         var repo = await sudoClient.Repository.CreateAsync(new(name: templateName), cancelToken: signal.Token);
-        WriteLine(Chalk.Green["  .. Created"]);
+        Console.WriteLine(Chalk.Green["  .. Created"]);
 
-        WriteLine("  .. Add files to repository ...");
+        Console.WriteLine("  .. Add files to repository ...");
         var templateDir = settings.ResourcesDir.RelativeDirectory(templateName);
         var files = new List<ChangeFileOperation>();
         foreach (var file in templateDir.EnumerateFiles("*", SearchOption.AllDirectories))
@@ -75,11 +74,11 @@ return await Paved.ProceedAsync(noPause: Args.RoughContains("--nopause"), async 
             files.Add(new(ChangeFileOperationOperation.Create, path: relPath, content));
         }
         await sudoClient.Repository.UpdateFilesAsync(settings.TargetUser, templateName, new(files: files), cancelToken: signal.Token);
-        WriteLine(Chalk.Green["  .. Added"]);
+        Console.WriteLine(Chalk.Green["  .. Added"]);
 
-        WriteLine("  .. Add branch to repository ...");
+        Console.WriteLine("  .. Add branch to repository ...");
         await sudoClient.Repository.CreateBranchAsync(settings.TargetUser, templateName, new(new_branch_name: "v0.0.0"), cancelToken: signal.Token);
-        WriteLine(Chalk.Green["  .. Added"]);
+        Console.WriteLine(Chalk.Green["  .. Added"]);
     }
 
 });

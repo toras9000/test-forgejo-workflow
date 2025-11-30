@@ -1,0 +1,62 @@
+#!/usr/bin/env -S dotnet run --file 
+#:package Lestaly.General@0.114.0
+#:package Kokuban@0.2.0
+using System.Runtime.InteropServices;
+using Microsoft.Win32;
+using Kokuban;
+using Lestaly;
+using Lestaly.Cx;
+
+var settings = new
+{
+    DotnetPath = default(FileInfo),
+
+    AssocArgs = "--verbosity quiet",
+
+    Extention = "cs1",
+
+    ProgID = "dotnet-fileapps",
+};
+
+return await Paved.ProceedAsync(async () =>
+{
+    // dummy
+    await Task.CompletedTask;
+
+    // Check platform type.
+    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        throw new PavedMessageException("This script is only available for Windows.");
+    }
+
+    // Determine the path of the dotnet executable file.
+    var dotnetExe = settings.DotnetPath;
+    if (dotnetExe == null)
+    {
+        dotnetExe = Environment.SpecialFolder.ProgramFiles.GetInfo().RelativeFile("dotnet/dotnet.exe");
+        if (!dotnetExe.Exists) throw new PavedMessageException("dotnet cannot be found.");
+        var dotnetVer = await dotnetExe.FullName.args("--version").silent().result().success().output();
+        var verMajor = dotnetVer.TakeToken('.').TryParseNumber<int>();
+        if (!(10 <= verMajor)) throw new PavedMessageException(".NET 10 or later is required.");
+    }
+
+    // Create or open the progid registry key
+    var progKey = Registry.CurrentUser.CreateSubKey(@$"Software\Classes\{settings.ProgID}\Shell\Open\Command");
+    if (progKey == null) throw new PavedMessageException("Unable to create or open ProgID registry key.");
+
+    // Make command line.
+    var assocCmdLine = @$"""{dotnetExe.FullName}"" run {settings.AssocArgs} --file ""%1"" -- %*";
+
+    // Set progid key value
+    progKey.SetValue(null, assocCmdLine, RegistryValueKind.ExpandString);
+
+    // Create or open the extension registry key
+    var extKey = Registry.CurrentUser.CreateSubKey(@$"Software\Classes\{settings.Extention.EnsureStarts(".")}");
+    if (extKey == null) throw new PavedMessageException("Unable to create or open Extention registry key.");
+
+    // Set assosiate key value
+    extKey.SetValue(null, settings.ProgID, RegistryValueKind.String);
+
+    // Output of normal completion.
+    Console.WriteLine(Chalk.Green["The registry has been updated."]);
+});

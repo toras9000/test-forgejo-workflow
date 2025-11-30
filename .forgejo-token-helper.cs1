@@ -1,6 +1,5 @@
-#!/usr/bin/env dotnet-script
-#r "nuget: Lestaly.General, 0.103.0"
-#nullable enable
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.114.0
 using Lestaly;
 using Lestaly.Cx;
 
