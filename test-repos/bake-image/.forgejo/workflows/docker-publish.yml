@@ -20,7 +20,7 @@ jobs:
           cat /tmp/my-ca.crt >> /etc/ssl/certs/ca-certificates.crt
 
       - name: Checkout repository
-        uses: https://github.com/actions/checkout@v4
+        uses: https://github.com/actions/checkout@v6
 
       - name: Setup Docker
         uses: https://github.com/docker/setup-docker-action@v4
