@@ -24,6 +24,13 @@ jobs:
 
       - name: Setup Docker
         uses: https://github.com/docker/setup-docker-action@v4
+        with:
+          daemon-config: |
+            {
+              "features": {
+                "containerd-snapshotter": false
+              }
+            }
 
       - name: Setup QEMU
         uses: https://github.com/docker/setup-qemu-action@v3
