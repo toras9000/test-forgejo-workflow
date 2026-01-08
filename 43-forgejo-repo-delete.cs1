@@ -1,5 +1,5 @@
 #!/usr/bin/env -S dotnet run --file
-#:package ForgejoApiClient@13.0.0-rev.1
+#:package ForgejoApiClient@13.0.0-rev.2
 #:package Lestaly.General@0.114.0
 #:package Kokuban@0.2.0
 #:package RefFile@0.2.0

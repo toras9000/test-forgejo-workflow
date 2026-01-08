@@ -91,7 +91,7 @@ services:
       additional_contexts:
         certs: ./assets/proxy/certs/ca
       args:
-        - RUNNER_VERSION=11
+        - RUNNER_VERSION=12
     restart: unless-stopped
     depends_on:
       forgejo:
@@ -118,7 +118,7 @@ services:
       DOCKER_HOST: tcp://forgejo-docker-container:2375
 
   proxy:
-    image: nginx:1.28
+    image: nginx:1.29
     restart: unless-stopped
     networks:
       composes-frontend:
