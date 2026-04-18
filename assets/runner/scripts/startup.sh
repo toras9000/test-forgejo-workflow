@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 
-if [ ! -f /data/.runner ]; then
+template_config=/assets/configs/config.yml
+service_config=/assets/configs/service.yml
+runner_config=/data/config.yml
+
+echo "Prepare config"
+cp  "$template_config" "$runner_config"
+
+if [ ! -f "$service_config" ]; then
     echo "Waiting for runner setup ..."
-    while [ ! -f /data/.runner ]
+    while [ ! -f "$service_config" ]
     do
         sleep 1s
     done
@@ -11,5 +18,8 @@ if [ ! -f /data/.runner ]; then
     sleep 5s
 fi
 
+echo "Apply service config"
+sed '1s/^\xef\xbb\xbf//' "$service_config" >> "$runner_config"
+
 echo "Start runner daemon"
-forgejo-runner daemon "$@"
+forgejo-runner daemon --config "$runner_config"

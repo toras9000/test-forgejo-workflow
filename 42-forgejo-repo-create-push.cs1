@@ -1,6 +1,6 @@
 #!/usr/bin/env -S dotnet run --file
-#:package ForgejoApiClient@13.0.0-rev.2
-#:package Lestaly.General@0.114.0
+#:package ForgejoApiClient@15.0.0-rev.1
+#:package Lestaly.General@0.123.0
 #:package Kokuban@0.2.0
 #:package RefFile@0.2.0
 #:property PublishAot=false
@@ -35,7 +35,7 @@ var settings = new
     },
 };
 
-return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
+return await Paved.ProceedAsync(noPause: args.RoughContains("--no-pause"), async () =>
 {
     using var signal = new SignalCancellationPeriod();
     using var outenc = Console.OutputUtf8EncodingPeriod();

@@ -1,0 +1,8 @@
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.123.0
+using Lestaly;
+
+return await Paved.ProceedAsync(noPause: args.RoughContains("--no-pause"), async () =>
+{
+    ThisSource.RelativeFile("assets/runner/configs/service.yml").Delete();
+});

@@ -1,7 +1,8 @@
 #!/usr/bin/env -S dotnet run --file
 #:package AngleSharp@1.4.0
-#:package Lestaly.General@0.114.0
+#:package Lestaly.General@0.123.0
 #:package Kokuban@0.2.0
+using System.Net;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
@@ -26,7 +27,7 @@ var settings = new
     },
 };
 
-return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
+return await Paved.ProceedAsync(noPause: args.RoughContains("--no-pause"), async () =>
 {
     using var signal = new SignalCancellationPeriod();
     using var outenc = Console.OutputUtf8EncodingPeriod();
@@ -38,51 +39,75 @@ return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async 
     Console.WriteLine();
 
     // Determine initial startup (whether the setup form is displayed)
-    Console.WriteLine();
     Console.WriteLine("Check initialization status ...");
     var requester = new DefaultHttpRequester() { Timeout = TimeSpan.FromSeconds(3 * 60), };
     var config = Configuration.Default.With(requester).WithDefaultLoader();
-    var context = BrowsingContext.New(config);
-    var document = default(IDocument);
-    using (var breaker = signal.Token.CreateLink(TimeSpan.FromSeconds(10)))
+    using var context = BrowsingContext.New(config);
+
+    var setupPage = default(IDocument);
+    using (var timeout = signal.Token.CreateLink(TimeSpan.FromSeconds(90)))
     {
-        while (document == null || document.Source.Length <= 0)
+        while (setupPage == null)
         {
-            if (document != null) await Task.Delay(TimeSpan.FromMilliseconds(200), breaker.Token);
-            document = await context.OpenAsync(settings.ServiceURL, breaker.Token);
+            var document = await context.OpenAsync(settings.ServiceURL, timeout.Token);
+            if (document != null && document.StatusCode == HttpStatusCode.OK && 0 < document.Source.Length)
+            {
+                setupPage = document;
+                break;
+            }
+            document?.Dispose();
+            await Task.Delay(TimeSpan.FromMilliseconds(500));
         }
     }
-    var container = document.QuerySelector<IHtmlDivElement>(".install-config-container");
-    if (container == null)
+    using (setupPage)
     {
-        // If the initial startup screen is not detected, it is assumed that the setup has already been done, so the process is completed.
-        Console.WriteLine($"  {Chalk.Green["The instance has already been initialized."]}");
-        return;
+        // Get config element.
+        var container = setupPage.QuerySelector<IHtmlDivElement>(".install-config-container");
+        if (container == null)
+        {
+            // If the initial startup screen is not detected, it is assumed that the setup has already been done, so the process is completed.
+            Console.WriteLine($"  {Chalk.Green["The instance has already been initialized."]}");
+            return;
+        }
+
+        // If you get a page that looks like the first startup, the setup process continues.
+        Console.WriteLine("  Detected that initial setup is required.");
+
+        // Attempt to retrieve setup form
+        Console.WriteLine("Perform initial setup ...");
+        var forms = container.Descendants<IHtmlFormElement>().ToArray();
+        if (forms.Length != 1) throw new PavedMessageException("Unexpected setup form");
+
+        // Change settings
+        var setupForm = forms[0];
+        var inputUpdateChecker = setupForm.QuerySelectorAll<IHtmlInputElement>("*").FirstOrDefault(e => e.Type == "checkbox" && e.Name == "enable_update_checker");
+        if (inputUpdateChecker == null) throw new PavedMessageException("Unexpected setup form");
+        inputUpdateChecker.IsChecked = false;
+
+        // Send with setup parameters
+        using var setupResult = await setupForm.SubmitAsync(new
+        {
+            admin_name = settings.Setup.AdminUser,
+            admin_email = settings.Setup.AdminMail,
+            admin_passwd = settings.Setup.AdminPass,
+            admin_confirm_passwd = settings.Setup.AdminPass,
+        });
+        var loadingElement = setupResult.GetElementById("goto-user-login");
+        if (loadingElement == null) throw new PavedMessageException("Unexpected setup result");
     }
 
-    // If you get a page that looks like the first startup, the setup process continues.
-    Console.WriteLine("  Detected that initial setup is required.");
-
-    // Attempt to retrieve setup form
-    Console.WriteLine("Perform initial setup ...");
-    var forms = container.Descendants<IHtmlFormElement>().ToArray();
-    if (forms.Length != 1) throw new PavedMessageException("Unexpected setup form");
-    var setupForm = forms[0];
-
-    // Change settings
-    var inputUpdateChecker = setupForm.QuerySelectorAll<IHtmlInputElement>("*").FirstOrDefault(e => e.Type == "checkbox" && e.Name == "enable_update_checker");
-    if (inputUpdateChecker == null) throw new PavedMessageException("Unexpected setup form");
-    inputUpdateChecker.IsChecked = false;
-
-    // Send with setup parameters
-    var setupResult = await setupForm.SubmitAsync(new
+    // Wait completion
+    Console.WriteLine("Wait setup completion ...");
+    using (var timeout = signal.Token.CreateLink(TimeSpan.FromSeconds(30)))
     {
-        admin_name = settings.Setup.AdminUser,
-        admin_email = settings.Setup.AdminMail,
-        admin_passwd = settings.Setup.AdminPass,
-        admin_confirm_passwd = settings.Setup.AdminPass,
-    });
-    var loadingElement = setupResult.GetElementById("goto-user-login");
-    if (loadingElement == null) throw new PavedMessageException("Unexpected setup result");
-    Console.WriteLine(Chalk.Green[$"  Setup completed."]);
+        while (true)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            using var document = await context.OpenAsync(settings.ServiceURL, timeout.Token);
+            if (document == null || document.StatusCode != HttpStatusCode.OK || document.Source.Length <= 0) continue;
+            var loading = document.GetElementById("goto-user-login");
+            if (loading == null) break; // loading finish
+        }
+    }
+    Console.WriteLine($"  {Chalk.Green["Setup completed."]}");
 });

@@ -1,0 +1,31 @@
+#!/usr/bin/env -S dotnet run --file
+#:package Kokuban@0.2.0
+#:package Lestaly.General@0.123.0
+using System.Security.Cryptography.X509Certificates;
+using Lestaly;
+
+return await Paved.ProceedAsync(noPause: args.RoughContains("--no-pause"), async () =>
+{
+    Console.WriteLine("Install Root CA cert");
+    var rootCaCertFile = ThisSource.RelativeFile("./assets/proxy/certs/ca/ca.crt");
+    using var rootCaCert = X509Certificate2.CreateFromPem(rootCaCertFile.ReadAllText());
+
+    using var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
+    store.Open(OpenFlags.ReadWrite);
+
+    if (store.Certificates.Any(c => c.Equals(rootCaCert)))
+    {
+        Console.WriteLine(".. Already installed");
+    }
+    else
+    {
+        var existsCerts = store.Certificates.Where(c => c.SubjectName.Name.Contains(rootCaCert.Subject)).ToArray();
+        if (0 < existsCerts.Length)
+        {
+            Console.WriteLine(".. Remove existing certs");
+            store.RemoveRange([.. existsCerts]);
+        }
+        Console.WriteLine(".. Install CA cert");
+        store.Add(rootCaCert);
+    }
+});
