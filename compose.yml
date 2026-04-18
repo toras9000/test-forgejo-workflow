@@ -9,7 +9,7 @@ networks:
 
 services:
   forgejo:
-    image: codeberg.org/forgejo/forgejo:13
+    image: codeberg.org/forgejo/forgejo:15
     restart: unless-stopped
     command: sh -c "
           cat /work/certs/ca/ca.crt >> /etc/ssl/certs/ca-certificates.crt
@@ -94,8 +94,6 @@ services:
         - RUNNER_VERSION=12
     restart: unless-stopped
     depends_on:
-      forgejo:
-        condition: service_healthy
       docker:
         condition: service_healthy
     networks:
@@ -103,7 +101,7 @@ services:
         aliases:
           - forgejo-runner-container
     user: 1000:1000
-    command: '/bin/sh /assets/scripts/startup.sh --config /assets/configs/config.yml'
+    command: '/bin/sh /assets/scripts/startup.sh'
     volumes:
       - type: bind
         source: ./assets/runner

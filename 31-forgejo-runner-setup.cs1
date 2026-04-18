@@ -1,43 +1,62 @@
 #!/usr/bin/env -S dotnet run --file
-#:package Lestaly.General@0.114.0
-#:package Kokuban@0.2.0
-using Kokuban;
+#:package ForgejoApiClient@15.0.0-rev.3
+#:package Lestaly.General@0.123.0
+#:package RefFile@0.2.0
+using System.Text;
+using ForgejoApiClient;
 using Lestaly;
-using Lestaly.Cx;
+[assembly: RefFile(".forgejo-token-helper.cs1")]
 
 var settings = new
 {
-    ComposeFile = ThisSource.RelativeFile("./compose.yml"),
+    Helper = new ForgejoServiceHelper
+    {
+        ComposeFile = ThisSource.RelativeFile("./compose.yml"),
+        ContainerName = "forgejo",
+        ServiceUrl = new Uri("https://forgejo.myserver.home"),
+        ApiUser = "forgejo-admin",
+    },
 
-    ForgejoContainer = "forgejo",
-    RunnerContainer = "runner",
+    ForgejoApiTokenFile = ThisSource.RelativeFile(".auth-forgejo-api"),
 
-    ForgejoURL = "https://forgejo.myserver.home",
+    TargetUser = "toras9000",
+    RunnerName = "DefaultRunner",
 
-    RunnerName = "default-runner",
-
+    ServiceConfigFile = ThisSource.RelativeFile("./assets/runner/services/service.yml"),
 };
 
-return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
+return await Paved.ProceedAsync(noPause: args.RoughContains("--no-pause"), async () =>
 {
     using var signal = new SignalCancellationPeriod();
-    using var outenc = Console.OutputUtf8EncodingPeriod();
 
-    Console.WriteLine("Get runner token");
-    var runnerToken = await "docker".args("compose", "--file", settings.ComposeFile,
-        "exec", "--user", "1000", settings.ForgejoContainer,
-        "forgejo", "forgejo-cli", "actions", "generate-runner-token"
-    ).silent().cancelby(signal.Token).result().success().output(trim: true);
-    Console.WriteLine($".. Token: {runnerToken.Trim()}");
+    Console.WriteLine("Load API token");
+    var scrambler = settings.ForgejoApiTokenFile.CreateScrambler(context: settings.ForgejoApiTokenFile.FullName);
+    var tokenInfo = await settings.Helper.TokenBind(settings.ForgejoApiTokenFile);
 
-    Console.WriteLine("Register runner");
-    await "docker".args("compose", "--file", settings.ComposeFile,
-       "run", "--rm", settings.RunnerContainer,
-       "forgejo-runner", "register",
-            "--no-interactive",
-            "--name", settings.RunnerName,
-            "--instance", settings.ForgejoURL,
-            "--token", runnerToken
-    ).echo().cancelby(signal.Token).result().success();
-    Console.WriteLine(Chalk.Green[".. Completed"]);
+    Console.WriteLine("Create API client");
+    using var forgejo = new ForgejoClient(new(tokenInfo.Service), tokenInfo.Token);
+    using var userClient = forgejo.Sudo(settings.TargetUser);
+
+    Console.WriteLine("Check Runner Registration");
+    var runners = await userClient.User.ListActionsRunnersAsync(cancelToken: signal.Token);
+    if (runners.Any(r => r.name == settings.RunnerName))
+    {
+        Console.WriteLine(".. Already registered.");
+        return;
+    }
+
+    Console.WriteLine("Create runner settings");
+    var runner = await userClient.User.CreateActionsRunnerAsync(new(settings.RunnerName), signal.Token);
+    Console.WriteLine($".. Created: uuid={runner.uuid}");
+
+    Console.WriteLine("Create service config");
+    await settings.ServiceConfigFile.WithDirectoryCreate().WriteMultilineTextAsync(lineBreak: "\n", encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), multiline: $"""
+    
+        forgejo:
+          url: {tokenInfo.Service}
+          uuid: {runner.uuid}
+          token: {runner.token}
+    
+    """.AsMemory(), signal.Token);
+
 });

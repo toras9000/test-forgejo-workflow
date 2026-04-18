@@ -1,9 +1,9 @@
 #!/usr/bin/env -S dotnet run --file
-#:package Lestaly.General@0.114.0
+#:package Lestaly.General@0.123.0
 using Lestaly;
 using Lestaly.Cx;
 
-return await Paved.ProceedAsync(noPause: args.RoughContains("--nopause"), async () =>
+return await Paved.ProceedAsync(noPause: args.RoughContains("--no-pause"), async () =>
 {
     Console.WriteLine($"Restart service ...");
     var composeFile = ThisSource.RelativeFile("./compose.yml");
